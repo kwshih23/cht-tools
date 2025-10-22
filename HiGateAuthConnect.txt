@@ -1,5 +1,6 @@
 @echo off
 :: ######### HiGate 按鍵精靈 #########
+::
 :: @name HiGate Auto Connect
 :: @version 1.0.0
 :: @description HiGate helper
@@ -14,7 +15,7 @@
 :: * VPN 斷線自動重新連線
 ::
 :: ## 特色
-:: * 無任何外掛程式，僅透過 powershell 操作視窗，乾淨無毒
+:: * 無任何外掛程式，僅透過 powershell 操作Windows視窗，乾淨無毒
 :: * 本文即所有程式碼，歡迎 debug
 ::
 :: ## 使用
@@ -25,12 +26,12 @@
 :: 5. 在新彈出的powershell 視窗填入 IP、帳號、PIN
 :: 
 :: ## 跳過填寫的做法
-:: 將下面第六行位置
+:: 將下面第 46 行位置
 :: $serverIP = $null
 :: $account = $null
 :: $token = $null
 :: 改成想要的內容如
-:: $serverIP = "192.168.1.1"
+:: $serverIP = "192.168.xxx.xxx"
 :: $account = "帳號"
 :: $token = "PIN"
 ::
@@ -47,8 +48,7 @@ $account = $null
 $token = $null
 ######################
 
-
-#####WIN32API#########
+######### WIN32API #########
 Add-Type -TypeDefinition @"
 using System;
 using System.Runtime.InteropServices;
@@ -79,7 +79,6 @@ public class Win32API {
 }
 "@
 ##############
-##############
 function Log {
     param (
         [string]$Message,
@@ -94,7 +93,6 @@ function Get-DefaultGateway {
     $defaultGateway = $columns[2]
     return $defaultGateway
 }
-##############
 function Start-HiGate {
     param (
         [string]$serverIP,
@@ -113,7 +111,7 @@ function Start-HiGate {
             }
         }
 
-        # 检查請輸入帳號
+        # 檢查輸入帳號
         if ([string]::IsNullOrWhiteSpace($account)) {
             $inputValue = Read-Host "請輸入帳號"
             if (-not [string]::IsNullOrWhiteSpace($inputValue)) {
@@ -159,10 +157,10 @@ function Start-HiGate {
     Write-Host "帳號: $account"
     Write-Host "PIN: *****（已隱藏）"
 
-    Write-Host "==============HiGate 啟動!!!!================"
+    Write-Host "================ HiGate 啟動!!!! ================"
 
 
-    #Write-Host "HiGate 查找視窗: 抓取"
+    # HiGate 查找視窗: 抓取
     $windowHandle = [Win32API]::FindWindow( "#32770","HiGate V3.01 for VDI");
     while ($true) {
         if ($windowHandle -ne [IntPtr]::Zero) {
@@ -177,9 +175,7 @@ function Start-HiGate {
         $windowHandle = [Win32API]::FindWindow( "#32770","HiGate V3.01 for VDI");
     }
 
-
-
-    #Write-Host "HiGate 視窗填寫: 選手動設定IP"
+    # HiGate 視窗填寫: 選手動設定IP
     $handle = [Win32API]::FindWindowEx($windowHandle , [IntPtr]::Zero, "Button", "手動設定IP ( 機房維運、財稅專案..... )")
     while ($true) {
         if ($handle -ne [IntPtr]::Zero) {
@@ -194,7 +190,7 @@ function Start-HiGate {
         $handle = [Win32API]::FindWindowEx($windowHandle , [IntPtr]::Zero, "Button", "手動設定IP ( 機房維運、財稅專案..... )")
     }
 
-    #Write-Host "HiGate 視窗填寫: 伺服器IP: $serverIp"
+    # HiGate 視窗填寫: 伺服器IP
     $handle = [Win32API]::FindWindowEx($windowHandle , [IntPtr]::Zero, "Combobox", "")
     while ($true) {
         if ($handle -ne [IntPtr]::Zero) {
@@ -210,7 +206,7 @@ function Start-HiGate {
     }
 
 
-  #  Write-Host "HiGate 視窗填寫: LDAP帳號: $account"
+    # HiGate 視窗填寫: LDAP帳號
     $hwnd = [Win32API]::FindWindowEx($windowHandle, [IntPtr]::Zero, "Edit", $null)
     $hwnd = [Win32API]::FindWindowEx($windowHandle, $hwnd, "Edit", $null)
     $handle = [Win32API]::FindWindowEx($windowHandle, $hwnd, "Edit", $null)
@@ -244,7 +240,6 @@ function Start-HiGate {
             if ($textHandle -ne [IntPtr]::Zero) {
                 $btn = [Win32API]::FindWindowEx($c1Handle , [IntPtr]::Zero, "Button", "確定")
                 Log "HiGate 執行連線: 顯示IC卡提示視窗，關閉視窗。hWnd $btn"
-
 
                 [void][Win32API]::PostMessage($c1Handle, [Win32API]::WM_CLOSE, 0, 0)
                 Start-Sleep -Seconds 6
@@ -327,4 +322,5 @@ if (-not $IsAdmin) {
     Start-Process powershell  -Verb RunAs -ArgumentList "-ExecutionPolicy Bypass -File `"$desktopPath\HiGateAuto.ps1`""
 
 }
+
 
