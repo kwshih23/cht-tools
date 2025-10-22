@@ -20,10 +20,10 @@
 ::
 :: ## 使用
 :: 1. 登入桌面雲維運終端
-:: 2. 開啟 命令提示字元 "cmd"
-:: 3. 本文全選 (Ctrl + a)，複製 (Ctrl + c)
-:: 4. 在 命令提示字元 "cmd" 窗口，貼上本文 (Ctrl + v)
-:: 5. 在新彈出的powershell 視窗填入 IP、帳號、PIN
+:: 2. 在維運終端開啟 命令提示字元 "cmd"
+:: 3. 將本文全選 (Ctrl + a)，複製 (Ctrl + c)
+:: 4. 在維運終端 命令提示字元 "cmd" 窗口，貼上本文 (Ctrl + v) 開始執行
+:: 5. 接著彈出 powershell 視窗填入 IP、帳號、PIN
 :: 
 :: ## 跳過填寫的做法
 :: 將下面第 46 行位置
@@ -322,6 +322,7 @@ if (-not $IsAdmin) {
     Start-Process powershell  -Verb RunAs -ArgumentList "-ExecutionPolicy Bypass -File `"$desktopPath\HiGateAuto.ps1`""
 
 }
+
 
 
 
