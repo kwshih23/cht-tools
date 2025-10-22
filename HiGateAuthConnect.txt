@@ -19,9 +19,9 @@
 :: * 本文即所有程式碼，歡迎 debug
 ::
 :: ## 使用
-:: 1. 本文全選 (Ctrl + a)，複製 (Ctrl + c)
-:: 2. 登入桌面雲維運終端
-:: 3. 開啟 命令提示字元 "cmd"
+:: 1. 登入桌面雲維運終端
+:: 2. 開啟 命令提示字元 "cmd"
+:: 3. 本文全選 (Ctrl + a)，複製 (Ctrl + c)
 :: 4. 在 命令提示字元 "cmd" 窗口，貼上本文 (Ctrl + v)
 :: 5. 在新彈出的powershell 視窗填入 IP、帳號、PIN
 :: 
@@ -322,5 +322,6 @@ if (-not $IsAdmin) {
     Start-Process powershell  -Verb RunAs -ArgumentList "-ExecutionPolicy Bypass -File `"$desktopPath\HiGateAuto.ps1`""
 
 }
+
 
 
