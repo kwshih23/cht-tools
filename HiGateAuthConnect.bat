@@ -1,0 +1,323 @@
+@echo off
+:: ######### HiGate 按鍵精靈 #########
+:: @name HiGate Auto Connect
+:: @version 1.0.0
+:: @description HiGate helper
+:: @author kwshih23
+:: @downloadURL
+::
+:: # HiGate Auto Connect
+::
+:: ## 功能
+:: * 一鍵啟動 HiGate 並自動連線
+:: * 自動輸入IP、帳號、IC卡 PIN token
+:: * VPN 斷線自動重新連線
+::
+:: ## 特色
+:: * 無任何外掛程式，僅透過 powershell 操作視窗，乾淨無毒
+:: * 本文即程式碼，歡迎 debug
+::
+:: ## 使用
+:: 1. 本文全選 (Ctrl + a)，複製 (Ctrl + c)
+:: 2. 登入桌面雲維運終端
+:: 3. 開啟命令提示字元 "cmd"
+:: 4. 在命令提示字元 "cmd" 窗口，貼上本文 (Ctrl + v)
+:: 5. 在新彈出的powershell 視窗填入 IP、帳號、PIN
+:: 
+:: ## 跳過填寫的做法
+:: 將下面第六行位置
+:: $serverIP = $null
+:: $account = $null
+:: $token = $null
+:: 改成想要的內容如
+:: $serverIP = "192.168.1.1"
+:: $account = "帳號"
+:: $token = "PIN"
+::
+:: ##############################
+
+powershell
+
+Start-Sleep -Seconds 5
+$content = @'
+
+######################
+$serverIP = $null
+$account = $null
+$token = $null
+######################
+
+
+#####WIN32API#########
+Add-Type -TypeDefinition @"
+using System;
+using System.Runtime.InteropServices;
+
+public class Win32API {
+    [DllImport("user32.dll", CharSet = CharSet.Auto)]
+    public static extern IntPtr SendMessage(IntPtr hWnd, uint Msg, IntPtr wParam, IntPtr lParam);
+    
+    [DllImport("user32.dll", CharSet = CharSet.Auto)]
+    public static extern IntPtr SendMessage(IntPtr hWnd, uint Msg, IntPtr wParam, string lParam);
+   
+    [DllImport("user32.dll", CharSet = CharSet.Auto)]
+    public static extern IntPtr SendMessage(IntPtr hWnd, uint Msg, int wParam, int lParam);
+
+    [DllImport("user32.dll", CharSet = CharSet.Auto)]
+    public static extern IntPtr PostMessage(IntPtr hWnd, uint Msg, int wParam, int lParam);
+
+    [DllImport("user32.dll", SetLastError = true)]
+    public static extern IntPtr FindWindow(string lpClassName, string lpWindowName);
+    
+    [DllImport("user32.dll", SetLastError = true)]
+    public static extern IntPtr FindWindowEx(IntPtr hwndParent, IntPtr hwndChildAfter, string lpszClass, string lpszWindow);
+
+    public const uint BM_CLICK = 0x00F5;
+    public const uint WM_SETTEXT = 0x000C;
+    public const uint WM_CLOSE = 0x0010;
+    public const uint WM_SETFOCUS = 0x0007;
+}
+"@
+##############
+##############
+function Get-DefaultGateway {
+    $route = route print | Select-String "0.0.0.0          0.0.0.0"
+    $columns = $route.ToString().Split(" ", [System.StringSplitOptions]::RemoveEmptyEntries)
+    $defaultGateway = $columns[2]
+    return $defaultGateway
+}
+##############
+function Start-HiGate {
+    param (
+        [string]$serverIP,
+        [string]$account,
+        [string]$token
+    )
+
+    do {
+        # 輸入主要伺服器IP
+        if ([string]::IsNullOrWhiteSpace($serverIP)) {
+            $inputValue = Read-Host "請輸入主要伺服器IP"
+            if (-not [string]::IsNullOrWhiteSpace($inputValue)) {
+                $serverIP = $inputValue
+            } else {
+                Write-Host "伺服器IP不能為空，請重新輸入`n" -ForegroundColor Red
+            }
+        }
+
+        # 检查請輸入帳號
+        if ([string]::IsNullOrWhiteSpace($account)) {
+            $inputValue = Read-Host "請輸入帳號"
+            if (-not [string]::IsNullOrWhiteSpace($inputValue)) {
+                $account = $inputValue
+            } else {
+                Write-Host "帳號不能為空，請重新輸入`n" -ForegroundColor Red
+            }
+        }
+
+        if ([string]::IsNullOrWhiteSpace($token)) {
+            $inputValue = Read-Host "請輸入PIN token" -AsSecureString
+            $ptr = [System.Runtime.InteropServices.Marshal]::SecureStringToCoTaskMemUnicode($inputValue)
+            try {
+                $tokenValue = [System.Runtime.InteropServices.Marshal]::PtrToStringUni($ptr)
+            } finally {
+                [System.Runtime.InteropServices.Marshal]::ZeroFreeCoTaskMemUnicode($ptr)
+            }
+            
+            if (-not [string]::IsNullOrWhiteSpace($tokenValue)) {
+                $token = $tokenValue
+            } else {
+                Write-Host "PIN不能為空，請重新輸入`n" -ForegroundColor Red
+            }
+        }
+
+        $allEntered = (-not [string]::IsNullOrWhiteSpace($serverIP)) -and 
+                      (-not [string]::IsNullOrWhiteSpace($account)) -and 
+                      (-not [string]::IsNullOrWhiteSpace($token))
+
+        if (-not $allEntered) {
+            Write-Host "以下尚未完成輸入：" -ForegroundColor Yellow
+            if ([string]::IsNullOrWhiteSpace($serverIP)) { Write-Host "- 伺服器IP" -ForegroundColor Yellow }
+            if ([string]::IsNullOrWhiteSpace($account)) { Write-Host "- 帳號" -ForegroundColor Yellow }
+            if ([string]::IsNullOrWhiteSpace($token)) { Write-Host "- PIN" -ForegroundColor Yellow }
+            Write-Host ""
+        }
+
+    } while (-not $allEntered)
+
+
+    Write-Host "`n確認參數完成：" -ForegroundColor Green
+    Write-Host "伺服器IP: $serverIP"
+    Write-Host "帳號: $account"
+    Write-Host "PIN: *****（已隐藏）"
+
+    Write-Host "==============HiGate 連線================"
+
+
+    #Write-Host "HiGate 查找視窗: 抓取"
+    $windowHandle = [Win32API]::FindWindow( "#32770","HiGate V3.01 for VDI");
+    while ($true) {
+        if ($windowHandle -ne [IntPtr]::Zero) {
+            Write-Host "HiGate 查找視窗: 抓取 HiGate 視窗成功! hWnd $windowHandle"
+            Start-Sleep -Seconds 2
+            break
+        } else {
+            Write-Host "HiGate 查找視窗: ❌ 無法抓取 HiGate 視窗，嘗試啟動 HiGate 程式..."
+            Start-Process "C:\Users\Public\Desktop\執行 HiGate 客戶端軟體.lnk"
+            Start-Sleep -Seconds 5
+        }
+        $windowHandle = [Win32API]::FindWindow( "#32770","HiGate V3.01 for VDI");
+    }
+
+
+
+    #Write-Host "HiGate 視窗填寫: 選手動設定IP"
+    $handle = [Win32API]::FindWindowEx($windowHandle , [IntPtr]::Zero, "Button", "手動設定IP ( 機房維運、財稅專案..... )")
+    while ($true) {
+        if ($handle -ne [IntPtr]::Zero) {
+            Write-Host "HiGate 視窗填寫: 選擇 '手動設定IP'。hWnd $handl"
+            $result = [Win32API]::SendMessage($handle, [Win32API]::BM_CLICK, 0, 0)
+            Start-Sleep -Seconds 2
+            break
+        } else {
+            Write-Host "HiGate 視窗填寫: ❌ 無法選擇 '手動設定IP'，5秒後重試..."
+            Start-Sleep -Seconds 5
+        }
+        $handle = [Win32API]::FindWindowEx($windowHandle , [IntPtr]::Zero, "Button", "手動設定IP ( 機房維運、財稅專案..... )")
+    }
+
+    #Write-Host "HiGate 視窗填寫: 伺服器IP: $serverIp"
+    $handle = [Win32API]::FindWindowEx($windowHandle , [IntPtr]::Zero, "Combobox", "")
+    while ($true) {
+        if ($handle -ne [IntPtr]::Zero) {
+            Write-Host "HiGate 視窗填寫: 填寫伺服器IP $serverIp。hWnd $handle"
+            [void][Win32API]::SendMessage($handle, [Win32API]::WM_SETTEXT, [IntPtr]::Zero, $serverIp)
+            Start-Sleep -Seconds 2
+            break
+        } else {
+            Write-Host "HiGate 視窗填寫: ❌ 無法填寫伺服器IP，5秒後重試..."
+            Start-Sleep -Seconds 5
+        }
+        $handle = [Win32API]::FindWindowEx($windowHandle , [IntPtr]::Zero, "Combobox", "")
+    }
+
+
+  #  Write-Host "HiGate 視窗填寫: LDAP帳號: $account"
+    $hwnd = [Win32API]::FindWindowEx($windowHandle, [IntPtr]::Zero, "Edit", $null)
+    $hwnd = [Win32API]::FindWindowEx($windowHandle, $hwnd, "Edit", $null)
+    $handle = [Win32API]::FindWindowEx($windowHandle, $hwnd, "Edit", $null)
+    while ($true) {
+        if ($handle -ne [IntPtr]::Zero) {
+            Write-Host "HiGate 視窗填寫: 填寫LDAP帳號 $account。 hWnd $handle"
+            [void][Win32API]::SendMessage($handle, [Win32API]::WM_SETTEXT, [IntPtr]::Zero, $account)
+            Start-Sleep -Seconds 2
+            break
+        } else {
+            Write-Host "HiGate 視窗填寫: ❌ 無法填寫LDAP帳號，5秒後重試..."
+            Start-Sleep -Seconds 5
+        }
+        $handle = [Win32API]::FindWindowEx($windowHandle, $hwnd, "Edit", $null)
+    }
+
+
+    $btnHandle = [Win32API]::FindWindowEx($windowHandle , [IntPtr]::Zero, "Button", "")
+    $btnHandle = [Win32API]::FindWindowEx($windowHandle , $btnHandle, "Button", "")
+    if ($btnHandle -ne [IntPtr]::Zero) {
+        Write-Host "HiGate 執行連線: 點擊 '連線伺服器'。 hWnd $btnHandle"
+        [void][Win32API]::PostMessage($btnHandle, [Win32API]::BM_CLICK, 0, 0)
+        Start-Sleep -Seconds 1
+    }
+
+    $c1Handle = [Win32API]::FindWindow("#32770", "HiGate");
+    while($true) {
+        if ($c1Handle -ne [IntPtr]::Zero) {
+            # confirm window 1
+            $textHandle = [Win32API]::FindWindowEx($c1Handle , [IntPtr]::Zero, "Static", "系統將進行憑證認證，請先將 IC Card 插入讀卡機謝謝!!")
+            if ($textHandle -ne [IntPtr]::Zero) {
+                $btn = [Win32API]::FindWindowEx($c1Handle , [IntPtr]::Zero, "Button", "確定")
+                Write-Host "HiGate 執行連線: 顯示IC卡提示視窗，關閉視窗。hWnd $btn"
+
+
+                [void][Win32API]::PostMessage($c1Handle, [Win32API]::WM_CLOSE, 0, 0)
+                Start-Sleep -Seconds 6
+
+                $c2Handle = [Win32API]::FindWindow("#32770", "HiGate");
+                if ($c2Windle -ne [IntPtr]::Zero) {
+                    $textHandle = [Win32API]::FindWindowEx($c2Handle , [IntPtr]::Zero, "Static", "無法讀取IC Card，請確認是否已插入IC Card 謝謝!!")
+                    if ($textHandle -ne [IntPtr]::Zero) {
+                        Write-Host "HiGate 執行連線: ❌無法讀取IC卡，關閉視窗。hWnd $c2Handle"
+                        [void][Win32API]::PostMessage($c2Handle, [Win32API]::WM_CLOSE, 0, 0)
+                        Start-Sleep -Seconds 4
+
+                        Write-Host "HiGate 執行連線: 重新點擊 '連線伺服器'。  hWnd $btnHandle"
+                        [void][Win32API]::PostMessage($btnHandle, [Win32API]::BM_CLICK, 0, 0)
+                        Start-Sleep -Seconds 4
+
+                    }
+                } else {
+                    # read success continue
+                }
+            }
+
+        } else {
+            Write-Host "HiGate 執行連線: IC卡讀取中........."
+            Start-Sleep -Seconds 5
+            break
+        }
+        $c1Handle = [Win32API]::FindWindow("#32770", "HiGate");
+    }
+
+    $handle = [Win32API]::FindWindow( "#32770","HiGate認證程式");
+    while ($true) {
+        if ($handle -ne [IntPtr]::Zero) {
+            Write-Host "HiGate 填寫密鑰: 填寫 PIN token。hWnd $handle"
+            $tokenHandle = [Win32API]::FindWindowEx($handle , [IntPtr]::Zero, "Edit","");
+            [void][Win32API]::SendMessage($tokenHandle, [Win32API]::WM_SETTEXT, [IntPtr]::Zero, $token)
+            Start-Sleep -Seconds 3
+            Write-Host "HiGate 填寫密鑰: 確定送出 PIN token"
+            $btnHandle = [Win32API]::FindWindowEx($handle , [IntPtr]::Zero, "Button","確定");
+            [void][Win32API]::PostMessage($btnHandle, [Win32API]::BM_CLICK, 0, 0)
+            Start-Sleep -Seconds 2
+           # [Win32API]::PostMessage($btnHandle, [Win32API]::BM_CLICK, 0, 0)
+            break
+        } else {
+            Write-Host "HiGate 填寫密鑰: ❌ 無法填寫 PIN token，5秒後重試..."
+            Start-Sleep -Seconds 5
+        }
+        $handle = [Win32API]::FindWindow( "#32770","HiGate認證程式");
+    }
+
+}
+
+while ($true) {
+    $gw = Get-DefaultGateway
+    if($gw.StartsWith("172.")) {
+        Write-Host "已經連上HiGate VPN，現在Default Gateway $gw" -ForegroundColor Green
+    } else {
+        Write-Host "尚未連上HiGate VPN，現在Default Gateway $gw"
+        Write-Host "嘗試連線HiGate"
+        Start-HiGate $serverIP $account $token
+        route print
+    }
+    Start-Sleep -Seconds 10
+}
+
+'@
+
+$desktopPath = [Environment]::GetFolderPath("Desktop")
+$filePath="$desktopPath\HiGateAuto.ps1"
+$content | Out-File -FilePath $filePath -Encoding utf8
+
+# 檢查是否為 Administrator
+$IsAdmin = ([Security.Principal.WindowsPrincipal] [Security.Principal.WindowsIdentity]::GetCurrent()).IsInRole(
+    [Security.Principal.WindowsBuiltInRole] "Administrator"
+)
+
+if (-not $IsAdmin) {
+    Write-Host "目前不是以系統管理員執行，正在嘗試以系統管理員重新開啟..."
+
+    # 開一個新的 Administrator PowerShell 來執行本腳本
+    Start-Process powershell  -Verb RunAs -ArgumentList "-ExecutionPolicy Bypass -File `"$desktopPath\HiGateAuto.ps1`""
+
+}
+
