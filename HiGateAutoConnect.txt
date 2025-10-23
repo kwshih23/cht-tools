@@ -15,7 +15,8 @@
 :: * VPN 斷線自動重新連線
 ::
 :: ## 特色
-:: * 無任何外掛程式，僅透過 powershell 操作Windows視窗，乾淨無毒
+:: * 無須安裝任何套件，僅透過 powershell 操作 Windows視窗工具，乾淨無毒
+:: * 所有操作都是Windows 內建的 library、指令
 :: * 本文內容即所有程式碼，歡迎 debug
 ::
 :: ## 使用
@@ -26,7 +27,7 @@
 :: 5. 執行過程會彈出 powershell 視窗，填入 IP、帳號、PIN 後繼續執行
 :: 
 :: ## 跳過填寫的做法
-:: 將下面第 46 行位置
+:: 將下面第 47 行位置
 :: $serverIP = ""
 :: $account = ""
 :: $token = ""
@@ -325,6 +326,7 @@ if (-not $IsAdmin) {
     Start-Process powershell  -Verb RunAs -ArgumentList "-ExecutionPolicy Bypass -File `"$desktopPath\HiGateAuto.ps1`""
 
 }
+
 
 
 
