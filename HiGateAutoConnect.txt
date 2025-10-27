@@ -34,7 +34,7 @@
 :: 改成想要的內容如
 :: $serverIP = "192.168.xxx.xxx"
 :: $account = "帳號"
-:: $token = "PIN"
+:: $token = "IC卡PIN"
 ::
 :: ##############################
 
@@ -159,7 +159,7 @@ function Start-HiGate {
     Write-Host "`n確認參數完成：" -ForegroundColor Green
     Write-Host "伺服器IP: $serverIP"
     Write-Host "帳號: $account"
-    Write-Host "PIN: *****（已隱藏）"
+    Write-Host "IC卡PIN: *****（已隱藏）"
 
     Write-Host "================ HiGate 啟動!!!! ================"
 
@@ -326,6 +326,7 @@ if (-not $IsAdmin) {
     Start-Process powershell  -Verb RunAs -ArgumentList "-ExecutionPolicy Bypass -File `"$desktopPath\HiGateAuto.ps1`""
 
 }
+
 
 
 
