@@ -5,7 +5,7 @@
 :: @version 1.0.0
 :: @description HiGate helper
 :: @author kwshih23
-:: @downloadURL https://raw.githubusercontent.com/kwshih23/cht-tools/refs/heads/main/HiGateAuthConnect.txt
+:: @downloadURL https://raw.githubusercontent.com/kwshih23/cht-tools/refs/heads/main/HiGateAutoConnect.txt
 ::
 :: # HiGate Auto Connect
 ::
@@ -326,6 +326,7 @@ if (-not $IsAdmin) {
     Start-Process powershell  -Verb RunAs -ArgumentList "-ExecutionPolicy Bypass -File `"$desktopPath\HiGateAuto.ps1`""
 
 }
+
 
 
 
