@@ -123,7 +123,7 @@ function Start-HiGate {
         }
 
         if ([string]::IsNullOrWhiteSpace($token)) {
-            $inputValue = Read-Host "請輸入PIN token" -AsSecureString
+            $inputValue = Read-Host "請輸入IC卡PIN" -AsSecureString
             $ptr = [System.Runtime.InteropServices.Marshal]::SecureStringToCoTaskMemUnicode($inputValue)
             try {
                 $tokenValue = [System.Runtime.InteropServices.Marshal]::PtrToStringUni($ptr)
@@ -134,7 +134,7 @@ function Start-HiGate {
             if (-not [string]::IsNullOrWhiteSpace($tokenValue)) {
                 $token = $tokenValue
             } else {
-                Write-Host "PIN不能為空，請重新輸入`n" -ForegroundColor Red
+                Write-Host "IC卡PIN不能為空，請重新輸入`n" -ForegroundColor Red
             }
         }
 
@@ -146,7 +146,7 @@ function Start-HiGate {
             Write-Host "以下尚未完成輸入：" -ForegroundColor Yellow
             if ([string]::IsNullOrWhiteSpace($serverIP)) { Write-Host "- 伺服器IP" -ForegroundColor Yellow }
             if ([string]::IsNullOrWhiteSpace($account)) { Write-Host "- 帳號" -ForegroundColor Yellow }
-            if ([string]::IsNullOrWhiteSpace($token)) { Write-Host "- PIN" -ForegroundColor Yellow }
+            if ([string]::IsNullOrWhiteSpace($token)) { Write-Host "- IC卡PIN" -ForegroundColor Yellow }
             Write-Host ""
         }
 
@@ -326,6 +326,7 @@ if (-not $IsAdmin) {
     Start-Process powershell  -Verb RunAs -ArgumentList "-ExecutionPolicy Bypass -File `"$desktopPath\HiGateAuto.ps1`""
 
 }
+
 
 
 
