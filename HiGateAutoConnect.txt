@@ -2,7 +2,7 @@
 :: ######### HiGate 按鍵精靈 #########
 ::
 :: @name HiGate Auto Connect
-:: @version 1.0.0
+:: @version 1.0.1
 :: @description HiGate helper
 :: @author kwshih23
 :: @downloadURL https://raw.githubusercontent.com/kwshih23/cht-tools/refs/heads/main/HiGateAutoConnect.txt
@@ -268,12 +268,13 @@ function Start-HiGate {
 
         } else {
             Log "HiGate 執行連線: IC卡讀取中........."
-            Start-Sleep -Seconds 5
+            Start-Sleep -Seconds 10
             break
         }
         $c1Handle = [Win32API]::FindWindow("#32770", "HiGate");
     }
 
+    $failCount = 0
     $handle = [Win32API]::FindWindow( "#32770","HiGate認證程式");
     while ($true) {
         if ($handle -ne [IntPtr]::Zero) {
@@ -288,11 +289,28 @@ function Start-HiGate {
            # [Win32API]::PostMessage($btnHandle, [Win32API]::BM_CLICK, 0, 0)
             break
         } else {
+            $failCount++
             Log "HiGate 填寫密鑰: ❌ 無法填寫 PIN token，5秒後重試..." Yellow
             Start-Sleep -Seconds 5
+            if ($failCount -ge 10) {
+                Log "HiGate  順序可能錯誤，重新執行..." Yellow
+                do {
+                    $handle = [Win32API]::FindWindow("#32770", "HiGate");
+                    if ($handle -ne [IntPtr]::Zero) {
+                        Log "HiGate  關閉彈出視窗 $handle" Yellow
+                        [void][Win32API]::PostMessage($handle, [Win32API]::WM_CLOSE, 0, 0)
+                        Start-Sleep -Seconds 3
+                    } else {
+                        break
+                    }
+                } while($true)
+                break
+            }
+
         }
         $handle = [Win32API]::FindWindow( "#32770","HiGate認證程式");
     }
+
 
 }
 
@@ -326,6 +344,7 @@ if (-not $IsAdmin) {
     Start-Process powershell  -Verb RunAs -ArgumentList "-ExecutionPolicy Bypass -File `"$desktopPath\HiGateAuto.ps1`""
 
 }
+
 
 
 
