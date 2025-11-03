@@ -2,7 +2,7 @@
 :: ######### HiGate 按鍵精靈 #########
 ::
 :: @name HiGate Auto Connect
-:: @version 1.0.1
+:: @version 1.0.2
 :: @description HiGate helper
 :: @author kwshih23
 :: @downloadURL https://raw.githubusercontent.com/kwshih23/cht-tools/refs/heads/main/HiGateAutoConnect.txt
@@ -90,9 +90,13 @@ function Log {
 }
 function Get-DefaultGateway {
     $route = route print | Select-String "0.0.0.0          0.0.0.0"
-    $columns = $route.ToString().Split(" ", [System.StringSplitOptions]::RemoveEmptyEntries)
-    $defaultGateway = $columns[2]
-    return $defaultGateway
+    if ([string]::IsNullOrWhiteSpace($route)) {
+        return ""
+    } else {
+        $columns = $route.ToString().Split(" ", [System.StringSplitOptions]::RemoveEmptyEntries)
+        $defaultGateway = $columns[2]
+        return $defaultGateway
+    }
 }
 function Start-HiGate {
     param (
@@ -344,6 +348,7 @@ if (-not $IsAdmin) {
     Start-Process powershell  -Verb RunAs -ArgumentList "-ExecutionPolicy Bypass -File `"$desktopPath\HiGateAuto.ps1`""
 
 }
+
 
 
 
