@@ -2,7 +2,7 @@
 :: ######### HiGate 按鍵精靈 #########
 ::
 :: @name HiGate Auto Connect
-:: @version 1.0.2
+:: @version 1.0.3
 :: @description HiGate helper
 :: @author kwshih23
 :: @downloadURL https://raw.githubusercontent.com/kwshih23/cht-tools/refs/heads/main/HiGateAutoConnect.txt
@@ -165,6 +165,14 @@ function Start-HiGate {
     Write-Host "帳號: $account"
     Write-Host "IC卡PIN: *****（已隱藏）"
 
+    Write-Host "================ HiGate 啟動檢查 ================"
+    $windowHandle = [Win32API]::FindWindow( "#32770","CHT Server Service List");
+    if ($windowHandle -ne [IntPtr]::Zero) {
+        Log "HiGate 啟動檢查: 已啟動且VPN連線成功 !"
+        return
+    } else {
+        Log "HiGate 啟動檢查: VPN 尚未連線"
+    }
     Write-Host "================ HiGate 啟動!!!! ================"
 
 
@@ -348,6 +356,7 @@ if (-not $IsAdmin) {
     Start-Process powershell  -Verb RunAs -ArgumentList "-ExecutionPolicy Bypass -File `"$desktopPath\HiGateAuto.ps1`""
 
 }
+
 
 
 
