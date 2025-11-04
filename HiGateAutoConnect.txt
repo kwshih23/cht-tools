@@ -328,7 +328,9 @@ function Start-HiGate {
 
 while ($true) {
     $gw = Get-DefaultGateway
-    if($gw.StartsWith('10.7') -or $gw.StartsWith('172.')) {
+    if ([string]::IsNullOrWhiteSpace($gw)) {
+        Log "無法讀取 Default Gateway $gw，稍後重試" Yellow
+    } elseif($gw.StartsWith('10.7') -or $gw.StartsWith('172.')) {
         Log "已經連上HiGate VPN，現在Default Gateway $gw" Green
     } else {
         Log "尚未連上HiGate VPN，現在Default Gateway $gw" Yellow
@@ -356,6 +358,7 @@ if (-not $IsAdmin) {
     Start-Process powershell  -Verb RunAs -ArgumentList "-ExecutionPolicy Bypass -File `"$desktopPath\HiGateAuto.ps1`""
 
 }
+
 
 
 
