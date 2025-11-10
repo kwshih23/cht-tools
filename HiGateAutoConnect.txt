@@ -2,7 +2,7 @@
 :: ######### HiGate 按鍵精靈 #########
 ::
 :: @name HiGate Auto Connect
-:: @version 1.0.4
+:: @version 1.0.5
 :: @description HiGate helper
 :: @author kwshih23
 :: @downloadURL https://raw.githubusercontent.com/kwshih23/cht-tools/refs/heads/main/HiGateAutoConnect.txt
@@ -49,6 +49,7 @@ $account = ""
 $token = ""
 ######################
 
+$serverIPIndex = 0
 ######### WIN32API #########
 Add-Type -TypeDefinition @"
 using System;
@@ -98,6 +99,7 @@ function Get-DefaultGateway {
         return $defaultGateway
     }
 }
+
 function Start-HiGate {
     param (
         [string]$serverIP,
@@ -108,7 +110,7 @@ function Start-HiGate {
     do {
         # 輸入主要伺服器IP
         if ([string]::IsNullOrWhiteSpace($serverIP)) {
-            $inputValue = Read-Host "請輸入主要伺服器IP"
+            $inputValue = Read-Host "請輸入主要伺服器IP(多個IP用逗號分隔)"
             if (-not [string]::IsNullOrWhiteSpace($inputValue)) {
                 $serverIP = $inputValue
             } else {
@@ -207,11 +209,13 @@ function Start-HiGate {
     }
 
     # HiGate 視窗填寫: 伺服器IP
+    $serverIPs = $serverIP -split ","
+    $global:serverIPIndex = ($global:serverIPIndex + 1) % $serverIPs.Length
     $handle = [Win32API]::FindWindowEx($windowHandle , [IntPtr]::Zero, "Combobox", "")
     while ($true) {
         if ($handle -ne [IntPtr]::Zero) {
-            Log "HiGate 視窗填寫: 填寫伺服器IP $serverIp。hWnd $handle"
-            [void][Win32API]::SendMessage($handle, [Win32API]::WM_SETTEXT, [IntPtr]::Zero, $serverIp)
+            Log "HiGate 視窗填寫: 填寫伺服器IP $($serverIPs[$global:serverIPIndex])。hWnd $handle"
+            [void][Win32API]::SendMessage($handle, [Win32API]::WM_SETTEXT, [IntPtr]::Zero, $($serverIPs[$global:serverIPIndex]))
             Start-Sleep -Seconds 2
             break
         } else {
@@ -358,6 +362,7 @@ if (-not $IsAdmin) {
     Start-Process powershell  -Verb RunAs -ArgumentList "-ExecutionPolicy Bypass -File `"$desktopPath\HiGateAuto.ps1`""
 
 }
+
 
 
 
