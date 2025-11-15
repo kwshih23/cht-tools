@@ -4,10 +4,10 @@
 :: @name HiGate Auto Connect
 :: @version 1.0.5
 :: @description HiGate helper
-:: @author kwshih23
+:: @author ns3943, kwshih23
 :: @downloadURL https://raw.githubusercontent.com/kwshih23/cht-tools/refs/heads/main/HiGateAutoConnect.txt
 ::
-:: # HiGate Auto Connect
+:: # HiGate Auto Connect 1.0.5
 ::
 :: ## 功能
 :: * 一鍵啟動 HiGate 並自動連線
@@ -362,6 +362,7 @@ if (-not $IsAdmin) {
     Start-Process powershell  -Verb RunAs -ArgumentList "-ExecutionPolicy Bypass -File `"$desktopPath\HiGateAuto.ps1`""
 
 }
+
 
 
 
